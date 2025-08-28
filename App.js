@@ -1,53 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StatusBar } from 'react-native-web';
 
 export default function App() {
-  // Estados: o que o usuário digita e o nome salvo
-  const [nome, setNome] = useState('');
-  const [nomeSalvo, setNomeSalvo] = useState('');
+  const [tarefa, setTarefa] = useState('');
+  const [tarefas, setTarefas] = useState([]);
 
-  // Busca o nome salvo quando o app abre
+  
   useEffect(() => {
-    async function buscarNome() {
-      const nomeGuardado = await AsyncStorage.getItem('nomeUsuario');
-      if (nomeGuardado) {
-        setNomeSalvo(nomeGuardado);
-      }
-    }
-    buscarNome();
+    AsyncStorage.getItem('minhasTarefas').then(tarefasSalvas => {
+      if (tarefasSalvas) setTarefas(JSON.parse(tarefasSalvas));
+    });
   }, []);
 
-  // Função para salvar o nome
-  const salvarNome = async () => {
-    if (nome === '') {
-      alert('Digite um nome primeiro!');
-      return;
-    }
-    await AsyncStorage.setItem('nomeUsuario', nome);
-    setNomeSalvo(nome);
-    setNome(''); // Limpa o campo
-    alert('Nome salvo com sucesso!');
-  };
+  useEffect(() => {
+    AsyncStorage.setItem('minhasTarefas', JSON.stringify(tarefas));
+  }, [tarefas]);
+
+  function adicionarTarefa() {
+    if (!tarefa) return;
+    setTarefas([...tarefas, tarefa]);
+    setTarefa('');
+  }
+
+  function removerTarefa(index) {
+    const novas = tarefas.filter((_, i) => i !== index);
+    setTarefas(novas);
+  }
+
+  function limparTudo() {
+    setTarefas([]);
+    AsyncStorage.removeItem('minhasTarefas');
+  }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <Text style={styles.titulo}>Meu Primeiro App! 📱</Text>
-      {/* Mostra o nome salvo */}
-      <Text style={styles.texto}>
-        {nomeSalvo ? `Olá, ${nomeSalvo}!` : 'Nenhum nome salvo.'}
-      </Text>
-      {/* Campo para digitar */}
+      <Text style={styles.titulo}>Estrela Guia✯!</Text>
+      <FlatList
+        data={tarefas}
+        keyExtractor={(_, i) => i.toString()}
+        renderItem={({ item, index }) => (
+          <View style={styles.item}>
+            <Text>{item}</Text>
+            <TouchableOpacity onPress={() => removerTarefa(index)}>
+              <Text style={styles.remover}>Remover</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        ListEmptyComponent={
+          <Text style={styles.texto}>Nenhuma viagem dos sonhos encontrada. Adicione uma!</Text>
+        }
+      />
       <TextInput
         style={styles.input}
-        placeholder="Digite seu nome"
-        value={nome}
-        onChangeText={setNome}
+        placeholder="Digite uma viagem"
+        value={tarefa}
+        onChangeText={setTarefa}
       />
-      {/* Botão para salvar */}
-      <Button title="Salvar Nome" onPress={salvarNome} />
+
+      <TouchableOpacity style={styles.botao} onPress={adicionarTarefa}>
+  <Text style={styles.textoBotao}>Adicionar</Text>
+</TouchableOpacity>
+
+<TouchableOpacity style={styles.botao2} onPress={adicionarTarefa}>
+  <Text style={styles.textoBotao}>Limpar Tudo</Text>
+</TouchableOpacity>
     </View>
   );
 }
@@ -56,18 +74,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: '#8db6bdff',
   },
   titulo: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#436e69ff',
+    fontFamily: 'courier',
   },
   texto: {
     fontSize: 18,
     marginBottom: 20,
     textAlign: 'center',
+    fontFamily: 'courier',
+    color: '#747277ff'
   },
   input: {
     borderWidth: 1,
@@ -75,5 +97,46 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 20,
     borderRadius: 5,
+    backgroundColor: '#fff',
+    fontFamily: 'courier',
   },
+  item: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#f6f8fa',
+    padding: 12,
+    marginBottom: 8,
+    borderRadius: 6,
+  },
+  remover: {
+    color: '#578183a1',
+    fontWeight: 'bold',
+    padding: 4,
+  },
+  
+  botao: {
+    backgroundColor: '#b3a8b8ff',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  textoBotao: {
+    color: 'white',
+    fontSize: 16,
+    fontFamily: 'courier',
+  },
+
+  botao2: {
+    backgroundColor: '#5b7d80ff',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  textoBotao2: {
+    color: 'white',
+    fontSize: 16,
+    fontFamily: 'courier',
+  },
+
 });
